@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
+import pickle
 
 
 # Ensure the "logs" directory exists
@@ -23,8 +24,9 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 console_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+if not logger.handlers:
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -54,16 +56,29 @@ def apply_tfidf(train_data: pd.DataFrame, test_data: pd.DataFrame, max_features:
         X_train_tfidf = vectorizer.fit_transform(X_train)
         X_test_tfidf = vectorizer.transform(X_test)
 
-        train_df = pd.DataFrame(X_train_tfidf.toarray())
+        # save vectorizer
+        os.makedirs("models", exist_ok=True)
+        with open("models/tfidf_vectorizer.pkl", "wb") as f:
+            pickle.dump(vectorizer, f)
+
+        feature_names = vectorizer.get_feature_names_out()
+
+        train_df = pd.DataFrame(
+            X_train_tfidf.toarray(),
+            columns=feature_names
+        )
         train_df['label'] = y_train
 
-        test_df = pd.DataFrame(X_test_tfidf.toarray())
+        test_df = pd.DataFrame(
+            X_test_tfidf.toarray(),
+            columns=feature_names
+        )
         test_df['label'] = y_test
 
         logger.debug('tfidf applied and data transformed')
         return train_df, test_df
     except Exception as e:
-        logger.error('Error during Bag of Words transformation: %s', e)
+        logger.error('Error during Tf-Idf transformation: %s', e)
         raise
 
 def save_data(df: pd.DataFrame, file_path: str) -> None:

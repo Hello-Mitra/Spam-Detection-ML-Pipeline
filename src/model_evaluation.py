@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import json
-from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score, f1_score
 import logging
 
 
@@ -26,8 +26,9 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 console_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+if not logger.handlers:
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
 
 
 def load_model(file_path: str):
@@ -66,12 +67,14 @@ def evaluate_model(clf, X_test: np.ndarray, y_test: np.ndarray) -> dict:
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
         auc = roc_auc_score(y_test, y_pred_proba)
 
         metrics_dict = {
             'accuracy': accuracy,
             'precision': precision,
             'recall': recall,
+            "f1": f1,
             'auc': auc
         }
         logger.debug('Model evaluation metrics calculated')
